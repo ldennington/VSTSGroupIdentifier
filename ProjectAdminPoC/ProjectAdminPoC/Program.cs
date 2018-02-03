@@ -32,7 +32,7 @@ namespace ProjectAdminPoC
             //Iterate through projects to get admins
             foreach (TeamProjectReference project in projects)
             {
-                string projectInfo = $"[{project.Name}]\\Project Administrators";
+                string projectInfo = $"[{project.Name}]\\{ConfigurationManager.AppSettings["Group"]}";
                 TeamFoundationIdentity tfi = ims.ReadIdentity(IdentitySearchFactor.AccountName, projectInfo, MembershipQuery.Direct, ReadIdentityOptions.None);
                 List<TeamFoundationIdentity> ids = new List<TeamFoundationIdentity>();
 
