@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.Services.Common;
 using System.IO;
 using System.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ProjectAdminPoC
 {
@@ -63,7 +65,8 @@ namespace ProjectAdminPoC
                     Console.WriteLine(identity.UniqueName);
                 }
 
-                SaveToExcel(admins);
+                //SaveAsExcel(admins);
+                SaveAsJson(admins);
             }
 
         }
@@ -117,10 +120,10 @@ namespace ProjectAdminPoC
             }
         }
 
-        public static void SaveToExcel(DataTable dt)
+        public static void SaveAsExcel(DataTable dt)
         {
             //Save to Excel
-            FileInfo fileInfo = new FileInfo(ConfigurationManager.AppSettings["FilePath"]);
+            FileInfo fileInfo = new FileInfo(ConfigurationManager.AppSettings["ExcelFilePath"]);
             XLWorkbook wb = new XLWorkbook();
             wb.Worksheets.Add(dt, ConfigurationManager.AppSettings["WorksheetName"]);
             using (MemoryStream memoryStream = SaveWorkbookToMemoryStream(wb))
@@ -128,6 +131,12 @@ namespace ProjectAdminPoC
                 File.WriteAllBytes(fileInfo.FullName, memoryStream.ToArray());
             }
             wb.Dispose();
+        }
+
+        public static void SaveAsJson(DataTable table)
+        {
+            string jsonString = JsonConvert.SerializeObject(table, Formatting.Indented);
+            File.WriteAllText($@"{ConfigurationManager.AppSettings["JsonFilePath"]}", jsonString);
         }
     }
 }
