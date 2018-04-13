@@ -6,11 +6,10 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using ClosedXML.Excel;
 using System.Data;
 using System.Collections.Generic;
+using System.Configuration;
 using Microsoft.VisualStudio.Services.Common;
 using System.IO;
-using System.Configuration;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using ProjectAdminPoC.Classes;
 
 namespace ProjectAdminPoC
@@ -38,51 +37,51 @@ namespace ProjectAdminPoC
             //Iterate through projects to get admins
             foreach (TeamProjectReference project in projects)
             {
-                string projectInfo = $"[{project.Name}]\\{ConfigurationManager.AppSettings["Group"]}";
-                TeamFoundationIdentity tfi = ims.ReadIdentity(IdentitySearchFactor.AccountName, projectInfo, MembershipQuery.Direct, ReadIdentityOptions.None);
-                List<TeamFoundationIdentity> ids = new List<TeamFoundationIdentity>();
+                    string projectInfo = $"[{project.Name}]\\{ConfigurationManager.AppSettings["Group"]}";
+                    TeamFoundationIdentity tfi = ims.ReadIdentity(IdentitySearchFactor.AccountName, projectInfo, MembershipQuery.Direct, ReadIdentityOptions.None);
+                    List<TeamFoundationIdentity> ids = new List<TeamFoundationIdentity>();
 
-                foreach (IdentityDescriptor identity in tfi.Members)
-                {
-                    try
+                    foreach (IdentityDescriptor identity in tfi.Members)
                     {
-                        TeamFoundationIdentity group = ims.ReadIdentity(identity,
-                            MembershipQuery.ExpandedDown, ReadIdentityOptions.None);
-                        GetAllProjectAdmins(group, ims, ref ids);
+                        try
+                        {
+                            TeamFoundationIdentity group = ims.ReadIdentity(identity,
+                                MembershipQuery.ExpandedDown, ReadIdentityOptions.None);
+                            GetAllProjectAdmins(group, ims, ref ids);
+                        }
+                        catch
+                        {
+                            TeamFoundationIdentity single = ims.ReadIdentity(identity, MembershipQuery.None, ReadIdentityOptions.None);
+                            ids.Add(single);
+                        }
                     }
-                    catch
+
+                    Console.WriteLine($"Members of {projectInfo}");
+                    Project proj = new Project { Name = project.Name };
+                    proj.Administrators = new List<string>();
+
+                    foreach (TeamFoundationIdentity identity in ids)
                     {
-                        TeamFoundationIdentity single = ims.ReadIdentity(identity, MembershipQuery.None, ReadIdentityOptions.None);
-                        ids.Add(single);
+                        if (!proj.Administrators.Contains(identity.UniqueName))
+                        {
+                            //Add admin to DataTable
+                            DataRow admin = admins.NewRow();
+                            admin["ProjectName"] = project.Name;
+                            admin["Email"] = identity.UniqueName;
+                            admins.Rows.Add(admin);
+
+                            //Add admin to Project Admin List
+                            proj.Administrators.Add(identity.UniqueName);
+
+                            Console.WriteLine(identity.UniqueName);
+                        }
                     }
+
+                    projectList.Add(proj);
                 }
 
-                Console.WriteLine($"Members of {projectInfo}");
-                Project proj = new Project { Name = project.Name };
-                proj.Administrators = new List<string>();
-
-                foreach (TeamFoundationIdentity identity in ids)
-                {
-                    if (!proj.Administrators.Contains(identity.UniqueName))
-                    {
-                        //Add admin to DataTable
-                        DataRow admin = admins.NewRow();
-                        admin["ProjectName"] = project.Name;
-                        admin["Email"] = identity.UniqueName;
-                        admins.Rows.Add(admin);
-
-                        //Add admin to Project Admin List
-                        proj.Administrators.Add(identity.UniqueName);
-
-                        Console.WriteLine(identity.UniqueName);
-                    }
-                }
-
-                projectList.Add(proj);
-            }
-
-            //SaveAsExcel(admins);
-            SaveAsJson(projectList);
+                //SaveAsExcel(admins);
+                SaveAsJson(projectList);
         }
 
         public static IEnumerable<TeamProjectReference> GetVstsProjects()
