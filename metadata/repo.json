@@ -1,6 +1,6 @@
 {
-    "contacts": [],
-    "description": "",
+    "contacts": ["ledennin@microsoft.com"],
+    "description": "Console app that pulls members of specified VSTS group",
     "deployedToProduction": false,
     "complianceTypes": [],
     "inventoryId": [],
